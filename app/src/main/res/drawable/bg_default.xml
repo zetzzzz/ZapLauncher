@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Default wallpaper: dusk gradient, echoing a lavender field at sunset. -->
+<gradient xmlns:android="http://schemas.android.com/apk/res/android"
+    android:angle="270"
+    android:startColor="#6C5BB5"
+    android:centerColor="#C97B9E"
+    android:endColor="#7A5C9E"
+    android:type="linear" />

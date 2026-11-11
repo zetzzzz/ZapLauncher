@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Zap bolt: white lightning on a purple rounded square. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp"
+    android:height="48dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <path
+        android:fillColor="#7C4DFF"
+        android:pathData="M14,4 h20 a10,10 0 0 1 10,10 v20 a10,10 0 0 1 -10,10 H14 a10,10 0 0 1 -10,-10 V14 a10,10 0 0 1 10,-10 z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M27,5 L15,27 h7 l-3,16 13,-21 h-7 z" />
+</vector>
