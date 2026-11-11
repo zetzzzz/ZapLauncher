@@ -4,6 +4,16 @@ All notable changes to Zap Launcher are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.1] - 2026-11-11
+
+### Fixed
+- Startup crash on the TCL UnionTV: pressing Home showed a black screen and
+  the launcher exited immediately. The cause was `bringToFront()` called from
+  the grid's child-selected listener during the first focus, which throws
+  `IllegalStateException` ("Cannot call this method while RecyclerView is
+  computing a layout"). The listener is removed; the focus scale animation
+  already makes the focused tile stand out.
+
 ## [0.1.0] - 2026-11-11
 
 ### Added

@@ -64,10 +64,11 @@ class MainActivity : AppCompatActivity() {
         appGrid.setNumColumns(4)
         adapter = AppAdapter(packageManager)
         appGrid.adapter = adapter
-        appGrid.setOnChildSelectedListener { _, view, _, _ ->
-            // Keep the focused tile visually on top of its neighbours.
-            view?.bringToFront()
-        }
+        // NOTE (v0.1.1): no OnChildSelectedListener here. Calling
+        // bringToFront() from the selection callback crashed on first focus
+        // ("Cannot call this method while RecyclerView is computing a
+        // layout"). The focus scale animation in onBindViewHolder already
+        // makes the focused tile stand out.
 
         settingsButton.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
