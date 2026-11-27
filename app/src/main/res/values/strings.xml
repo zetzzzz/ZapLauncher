@@ -3,6 +3,7 @@
     <string name="app_name">Zap Launcher</string>
     <string name="settings_title">Settings</string>
     <string name="hide_apps_title">Hidden apps</string>
-    <string name="favorites_title">Favorite apps</string>
+    <string name="arrange_title">Arrange apps</string>
+    <string name="icons_title">Change app icons</string>
     <string name="settings_button_desc">Open settings</string>
 </resources>

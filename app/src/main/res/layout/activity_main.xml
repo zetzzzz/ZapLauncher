@@ -50,7 +50,9 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:textSize="20sp"
-            android:textColor="@color/white_70" />
+            android:textColor="@color/white_70"
+            android:focusable="true"
+            android:focusableInTouchMode="true" />
 
         <TextView
             android:id="@+id/clockText"
@@ -58,6 +60,8 @@
             android:layout_height="wrap_content"
             android:textSize="48sp"
             android:textStyle="bold"
-            android:textColor="@color/white" />
+            android:textColor="@color/white"
+            android:focusable="true"
+            android:focusableInTouchMode="true" />
     </LinearLayout>
 </FrameLayout>

@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- No permissions needed: wallpaper is picked via the Storage Access
-         Framework, and the app list comes from the PackageManager queries
-         declared below. No ads, no tracking, no background services. -->
+    <!-- Storage read is only for the built-in icon picker (v0.1.6): the
+         system image picker does not exist on this TV, so Zap lists the
+         TV's own photos itself. Wallpaper is still picked via the Storage
+         Access Framework. No ads, no tracking, no background services. -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
 
     <queries>
         <intent>
@@ -54,6 +58,18 @@
             android:exported="false"
             android:screenOrientation="landscape"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:label="@string/favorites_title" />
+            android:label="@string/arrange_title" />
+        <activity
+            android:name=".IconsActivity"
+            android:exported="false"
+            android:screenOrientation="landscape"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:label="@string/icons_title" />
+        <activity
+            android:name=".IconPickerActivity"
+            android:exported="false"
+            android:screenOrientation="landscape"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:label="@string/icons_title" />
     </application>
 </manifest>

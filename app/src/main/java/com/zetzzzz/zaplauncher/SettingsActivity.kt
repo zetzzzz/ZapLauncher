@@ -53,8 +53,11 @@ class SettingsActivity : AppCompatActivity() {
             Row("Hidden apps", "Hide apps from the home grid") {
                 startActivity(Intent(this, HideAppsActivity::class.java))
             },
-            Row("Favorite apps order", "Reorder the pinned apps at the top") {
+            Row("Arrange apps", "Move, hide and change app icons") {
                 startActivity(Intent(this, FavoritesActivity::class.java))
+            },
+            Row("Change app icons", "Pick a custom image per app") {
+                startActivity(Intent(this, IconsActivity::class.java))
             },
             Row("Make Zap Launcher the default home", "Open the system home setting") {
                 try {
@@ -100,7 +103,7 @@ class SettingsActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle("Zap Launcher")
             .setMessage(
-                "Version 0.1.0\n\n" +
+                "Version 0.1.3\n\n" +
                 "A lightweight, fast, ad-free custom launcher for Android TV.\n" +
                 "No ads, no tracking, no background services.\n\n" +
                 "Source: github.com/zetzzzz/ZapLauncher\n" +

@@ -1,6 +1,7 @@
 package com.zetzzzz.zaplauncher
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,136 +13,102 @@ import androidx.recyclerview.widget.RecyclerView
 import kotlin.concurrent.thread
 
 /**
- * Reorder the pinned favorite apps (shown first on the home grid) and add
- * or remove favorites. Order is saved and applied on the home screen.
+ * Arrange the home grid (v0.1.3): every visible app in display order.
+ * Move apps with Up/Down, hide an app with the ✕ button (unhide it in
+ * Hidden apps). The order is saved and applied on the home screen.
+ * (Replaces the old favorites-only ordering.)
+ *
+ * NOTE (v0.1.5): the row itself is NOT focusable (see item_favorite.xml).
+ * A focusable row swallows D-pad focus, so the ↑ ↓ ✕ buttons inside it
+ * could never be reached — focus search cannot move from a container
+ * onto a view inside its own bounds.
  */
 class FavoritesActivity : AppCompatActivity() {
 
     private lateinit var prefs: Prefs
     private lateinit var list: RecyclerView
+    private var order: MutableList<String> = mutableListOf()
     private var apps: List<AppEntry> = emptyList()
-    private var favorites: MutableList<String> = mutableListOf()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_list)
-        findViewById<TextView>(R.id.listTitle).text = getString(R.string.favorites_title)
+        findViewById<TextView>(R.id.listTitle).text = getString(R.string.arrange_title)
         findViewById<TextView>(R.id.listHint).text =
-            "Favorites appear first on the home grid, in this order."
+            "Move apps with ↑ ↓. The top of the list is the top of the home grid. ✕ hides an app."
         prefs = Prefs(this)
-        favorites = prefs.favorites().toMutableList()
         list = findViewById(R.id.appList)
         list.layoutManager = LinearLayoutManager(this)
         thread {
             val loaded = AppsRepository.loadApps(packageManager, packageName)
+            val visible = loaded.filter { it.packageName !in prefs.hiddenApps() }
+            val resolved = AppsRepository.resolveOrder(visible, prefs)
             runOnUiThread {
-                apps = loaded
-                if (favorites.isEmpty()) {
-                    favorites = AppsRepository.defaultFavorites(apps).toMutableList()
-                    prefs.setFavorites(favorites)
-                }
+                apps = visible
+                order = resolved.toMutableList()
                 refresh()
             }
         }
     }
 
     private fun refresh() {
-        list.adapter = FavoritesAdapter(apps, favorites,
+        list.adapter = ArrangeAdapter(apps, order,
             onMove = { from, to ->
-                val item = favorites.removeAt(from)
-                favorites.add(to, item)
-                prefs.setFavorites(favorites)
+                val item = order.removeAt(from)
+                order.add(to, item)
+                prefs.setAppOrder(order)
+                Log.d(TAG, "arrange move: ${item} $from -> $to")
                 refresh()
             },
-            onRemove = { pkg ->
-                favorites.remove(pkg)
-                prefs.setFavorites(favorites)
-                refresh()
-            },
-            onAdd = { pkg ->
-                favorites.add(pkg)
-                prefs.setFavorites(favorites)
+            onHide = { pkg ->
+                val hidden = prefs.hiddenApps().toMutableSet()
+                hidden.add(pkg)
+                prefs.setHiddenApps(hidden)
+                order.remove(pkg)
+                prefs.setAppOrder(order)
+                Log.d(TAG, "arrange hide: $pkg")
                 refresh()
             }
         )
     }
 
-    private sealed class Row {
-        data class Header(val text: String) : Row()
-        data class Favorite(val app: AppEntry, val index: Int) : Row()
-        data class Addable(val app: AppEntry) : Row()
-    }
-
-    private class FavoritesAdapter(
+    private class ArrangeAdapter(
         apps: List<AppEntry>,
-        favorites: List<String>,
+        private val order: List<String>,
         private val onMove: (Int, Int) -> Unit,
-        private val onRemove: (String) -> Unit,
-        private val onAdd: (String) -> Unit
-    ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+        private val onHide: (String) -> Unit
+    ) : RecyclerView.Adapter<ArrangeAdapter.Holder>() {
 
-        private val rows: List<Row> = buildList {
-            val byPkg = apps.associateBy { it.packageName }
-            add(Row.Header("Favorites — shown first"))
-            favorites.forEachIndexed { i, pkg ->
-                byPkg[pkg]?.let { add(Row.Favorite(it, i)) }
-            }
-            add(Row.Header("All apps — tap + to pin"))
-            apps.filter { it.packageName !in favorites }
-                .forEach { add(Row.Addable(it)) }
-        }
+        private val rows: List<AppEntry> =
+            order.mapNotNull { pkg -> apps.firstOrNull { it.packageName == pkg } }
 
-        class HeaderHolder(v: View) : RecyclerView.ViewHolder(v) {
-            val text: TextView = v.findViewById(R.id.rowTitle)
-        }
-        class FavHolder(v: View) : RecyclerView.ViewHolder(v) {
+        class Holder(v: View) : RecyclerView.ViewHolder(v) {
             val label: TextView = v.findViewById(R.id.rowTitle)
             val up: Button = v.findViewById(R.id.btnUp)
             val down: Button = v.findViewById(R.id.btnDown)
             val remove: Button = v.findViewById(R.id.btnRemove)
         }
-        class AddHolder(v: View) : RecyclerView.ViewHolder(v) {
-            val label: TextView = v.findViewById(R.id.rowTitle)
-            val add: Button = v.findViewById(R.id.btnAdd)
-        }
 
-        override fun getItemViewType(position: Int) = when (rows[position]) {
-            is Row.Header -> 0
-            is Row.Favorite -> 1
-            is Row.Addable -> 2
-        }
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
-            val inf = LayoutInflater.from(parent.context)
-            return when (viewType) {
-                0 -> HeaderHolder(inf.inflate(R.layout.item_header, parent, false))
-                1 -> FavHolder(inf.inflate(R.layout.item_favorite, parent, false))
-                else -> AddHolder(inf.inflate(R.layout.item_addable, parent, false))
-            }
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): Holder {
+            val v = LayoutInflater.from(parent.context)
+                .inflate(R.layout.item_favorite, parent, false)
+            return Holder(v)
         }
 
         override fun getItemCount() = rows.size
 
-        override fun onBindViewHolder(h: RecyclerView.ViewHolder, position: Int) {
-            when (val row = rows[position]) {
-                is Row.Header -> (h as HeaderHolder).text.text = row.text
-                is Row.Favorite -> {
-                    val holder = h as FavHolder
-                    holder.label.text = row.app.label
-                    holder.up.isEnabled = row.index > 0
-                    holder.down.isEnabled = row.index < favoritesCount() - 1
-                    holder.up.setOnClickListener { onMove(row.index, row.index - 1) }
-                    holder.down.setOnClickListener { onMove(row.index, row.index + 1) }
-                    holder.remove.setOnClickListener { onRemove(row.app.packageName) }
-                }
-                is Row.Addable -> {
-                    val holder = h as AddHolder
-                    holder.label.text = row.app.label
-                    holder.add.setOnClickListener { onAdd(row.app.packageName) }
-                }
-            }
+        override fun onBindViewHolder(h: Holder, position: Int) {
+            val app = rows[position]
+            h.label.text = app.label
+            h.up.isEnabled = position > 0
+            h.down.isEnabled = position < rows.size - 1
+            h.up.setOnClickListener { onMove(position, position - 1) }
+            h.down.setOnClickListener { onMove(position, position + 1) }
+            h.remove.setOnClickListener { onHide(app.packageName) }
         }
+    }
 
-        private fun favoritesCount() = rows.count { it is Row.Favorite }
+    companion object {
+        const val TAG = "ZapLauncher"
     }
 }

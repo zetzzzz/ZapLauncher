@@ -23,10 +23,40 @@ class Prefs(context: Context) {
     fun setFavorites(pkgs: List<String>) =
         sp.edit().putString(KEY_FAVORITES, pkgs.joinToString("|")).apply()
 
+    /** Full home-grid order: every visible app, in display order. */
+    fun appOrder(): List<String> {
+        val raw = sp.getString(KEY_APP_ORDER, "") ?: ""
+        return raw.split("|").filter { it.isNotBlank() }
+    }
+    fun setAppOrder(pkgs: List<String>) =
+        sp.edit().putString(KEY_APP_ORDER, pkgs.joinToString("|")).apply()
+
+    /** One-time v0.1.4 repair of stranded pinned apps has run. */
+    var orderRepaired: Boolean
+        get() = sp.getBoolean(KEY_ORDER_REPAIRED, false)
+        set(v) = sp.edit().putBoolean(KEY_ORDER_REPAIRED, v).apply()
+
+    /** Custom icons: package name -> image content URI ("pkg|uri" entries). */
+    fun customIcon(pkg: String): String? {
+        val raw = sp.getStringSet(KEY_CUSTOM_ICONS, emptySet()) ?: emptySet()
+        val prefix = "$pkg|"
+        return raw.firstOrNull { it.startsWith(prefix) }?.removePrefix(prefix)
+    }
+    fun setCustomIcon(pkg: String, uri: String?) {
+        val current = (sp.getStringSet(KEY_CUSTOM_ICONS, emptySet()) ?: emptySet()).toMutableSet()
+        val prefix = "$pkg|"
+        current.removeAll { it.startsWith(prefix) }
+        if (uri != null) current.add(prefix + uri)
+        sp.edit().putStringSet(KEY_CUSTOM_ICONS, current).apply()
+    }
+
     companion object {
         const val KEY_WALLPAPER = "wallpaper"
         const val KEY_HIDDEN = "hidden_apps"
         const val KEY_FAVORITES = "favorites"
+        const val KEY_APP_ORDER = "app_order"
+        const val KEY_ORDER_REPAIRED = "order_repaired_v014"
+        const val KEY_CUSTOM_ICONS = "custom_icons"
         const val WALLPAPER_DEFAULT = "default"
         const val WALLPAPER_LAVENDER = "lavender"
         const val WALLPAPER_FOREST = "forest"
